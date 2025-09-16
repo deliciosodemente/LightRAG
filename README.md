@@ -1861,6 +1861,39 @@ primaryClass={cs.IR}
 
 ---
 
+## 💝 Support & Donations
+
+If you find LightRAG helpful and would like to support its continued development, consider making a donation. Your support helps maintain and improve this open-source project!
+
+### 💳 PayPal Donation
+[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/paypalme/axelpadilla98)
+
+**PayPal Email**: axelpadilla98@gmail.com
+
+### 🙏 Why Donate?
+- **Continued Development**: Support for new features and improvements
+- **Documentation**: Enhanced guides and tutorials
+- **Community Support**: Help with issues and feature requests
+- **Infrastructure**: Server costs and development tools
+- **Open Source**: Keeping LightRAG free and accessible to everyone
+
+### 🤝 Other Ways to Support
+- ⭐ **Star the repository** on GitHub
+- 🔄 **Share** with others who might benefit
+- 🐛 **Report issues** and suggest improvements
+- 📖 **Contribute** documentation or code
+- 💬 **Spread the word** in developer communities
+
+### 📊 Impact of Your Support
+Your donations directly contribute to:
+- Adding support for new AI models and providers
+- Improving documentation and examples
+- Enhancing performance and scalability
+- Expanding multimodal capabilities
+- Supporting community-driven features
+
+---
+
 <div align="center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 30px; margin: 30px 0;">
   <div>
     <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="500">
