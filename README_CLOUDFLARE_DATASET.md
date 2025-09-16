@@ -461,6 +461,31 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
+## 💝 Support & Donations
+
+If you find this project helpful and would like to support its continued development, consider making a donation. Your support helps maintain and improve the project!
+
+### 💳 PayPal Donation
+[![Donate via PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg)](https://www.paypal.com/paypalme/axelpadilla98)
+
+**PayPal Email**: axelpadilla98@gmail.com
+
+### 🙏 Why Donate?
+- **Continued Development**: Support for new features and improvements
+- **Documentation**: Enhanced guides and tutorials
+- **Community Support**: Help with issues and feature requests
+- **Infrastructure**: Server costs and development tools
+- **Open Source**: Keeping the project free and accessible
+
+### 🤝 Other Ways to Support
+- ⭐ **Star the repository** on GitHub
+- 🔄 **Share** with others who might benefit
+- 🐛 **Report issues** and suggest improvements
+- 📖 **Contribute** documentation or code
+- 💬 **Spread the word** in developer communities
+
+---
+
 **Happy coding! 🚀**
 
 For more information, visit the [LightRAG Cloudflare Dataset Integration Guide](LIGHTRAG_CLOUDFLARE_DATASET_INTEGRATION_GUIDE.md).
