@@ -1,24 +1,89 @@
+version: '3.8'
+
 services:
   lightrag:
-    container_name: lightrag
-    image: ghcr.io/hkuds/lightrag:latest
     build:
       context: .
       dockerfile: Dockerfile
-      tags:
-        - ghcr.io/hkuds/lightrag:latest
+    container_name: lightrag-server
     ports:
       - "${PORT:-9621}:9621"
     volumes:
       - ./data/rag_storage:/app/data/rag_storage
       - ./data/inputs:/app/data/inputs
-      - ./data/tiktoken:/app/data/tiktoken
-      - ./config.ini:/app/config.ini
-      - ./.env:/app/.env
+      - ./logs:/app/logs
+      - ./.env:/app/.env:ro
+    environment:
+      - HOST=0.0.0.0
+      - PORT=9621
+      - WORKING_DIR=/app/data/rag_storage
+      - INPUT_DIR=/app/data/inputs
     env_file:
       - .env
-    environment:
-      - TIKTOKEN_CACHE_DIR=/app/data/tiktoken
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9621/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - lightrag-network
+    depends_on:
+      - redis
+      - postgres
+
+  # Optional: Redis for caching (if using Redis storage)
+  redis:
+    image: redis:7-alpine
+    container_name: lightrag-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - lightrag-network
+
+  # Optional: PostgreSQL for persistent storage
+  postgres:
+    image: postgres:15-alpine
+    container_name: lightrag-postgres
+    environment:
+      POSTGRES_DB: lightrag
+      POSTGRES_USER: lightrag
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - lightrag-network
+
+  # Optional: Nginx reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    container_name: lightrag-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - lightrag
+    restart: unless-stopped
+    networks:
+      - lightrag-network
+    profiles:
+      - production
+
+volumes:
+  redis_data:
+  postgres_data:
+
+networks:
+  lightrag-network:
+    driver: bridge

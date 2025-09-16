@@ -1,63 +1,72 @@
-# Build stage
-FROM python:3.12-slim AS builder
+# Multi-stage Dockerfile for LightRAG
+FROM python:3.10-slim as builder
 
+# Set environment variables for build
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies for building
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy requirements and install Python dependencies
 WORKDIR /app
+COPY pyproject.toml ./
+COPY lightrag/ ./lightrag/
+RUN pip install --upgrade pip && \
+    pip install -e .[api]
 
-# Upgrade pip、setuptools and wheel to the latest version
-RUN pip install --upgrade pip setuptools wheel
+# Production stage
+FROM python:3.10-slim as production
 
-# Install Rust and required build dependencies
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     curl \
-    build-essential \
-    pkg-config \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
-    && . $HOME/.cargo/env
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy pyproject.toml and source code for dependency installation
-COPY pyproject.toml .
-COPY setup.py .
-COPY lightrag/ ./lightrag/
+# Create non-root user
+RUN groupadd -r lightrag && useradd -r -g lightrag lightrag
 
-# Install dependencies
-ENV PATH="/root/.cargo/bin:${PATH}"
-RUN pip install --user --no-cache-dir --use-pep517 .
-RUN pip install --user --no-cache-dir --use-pep517 .[api]
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Install depndencies for default storage
-RUN pip install --user --no-cache-dir nano-vectordb networkx
-# Install depndencies for default LLM
-RUN pip install --user --no-cache-dir openai ollama tiktoken
-# Install depndencies for default document loader
-RUN pip install --user --no-cache-dir pypdf2 python-docx python-pptx openpyxl
-
-# Final stage
-FROM python:3.12-slim
-
+# Set working directory
 WORKDIR /app
 
-# Upgrade pip and setuptools
-RUN pip install --upgrade pip setuptools wheel
+# Copy application code
+COPY . .
 
-# Copy only necessary files from builder
-COPY --from=builder /root/.local /root/.local
-COPY ./lightrag ./lightrag
-COPY setup.py .
-
-RUN pip install --use-pep517 ".[api]"
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Copy and make entrypoint script executable
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Create necessary directories
-RUN mkdir -p /app/data/rag_storage /app/data/inputs
+RUN mkdir -p /app/data/rag_storage /app/data/inputs /app/logs /app/temp/tiktoken
 
-# Docker data directories
-ENV WORKING_DIR=/app/data/rag_storage
-ENV INPUT_DIR=/app/data/inputs
+# Install netcat for health checks
+RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
 
-# Expose the default port
+# Set ownership
+RUN chown -R lightrag:lightrag /app
+
+# Switch to non-root user
+USER lightrag
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:9621/health || exit 1
+
+# Expose port
 EXPOSE 9621
 
-# Set entrypoint
-ENTRYPOINT ["python", "-m", "lightrag.api.lightrag_server"]
+# Set entrypoint and default command
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["lightrag-server", "--host", "0.0.0.0", "--port", "9621"]
